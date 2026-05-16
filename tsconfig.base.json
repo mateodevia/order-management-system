@@ -21,7 +21,9 @@
       "@oms/inventory": ["libs/inventory/src/index.ts"],
       "@oms/payments": ["libs/payments/src/index.ts"],
       "@oms/shared/util-errors": ["libs/shared/util-errors/src/index.ts"],
-      "@oms/shared/request-logger": ["libs/shared/request-logger/src/index.ts"]
+      "@oms/shared/util-validation": ["libs/shared/util-validation/src/index.ts"],
+      "@oms/shared/request-logger": ["libs/shared/request-logger/src/index.ts"],
+      "@oms/shared/testing-utils": ["libs/shared/testing-utils/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

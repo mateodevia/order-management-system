@@ -47,6 +47,51 @@
       }
     },
     {
+      "files": ["*.test.ts"],
+      "rules": {
+        "@nx/enforce-module-boundaries": [
+          "error",
+          {
+            "enforceBuildableLibDependency": false,
+            "allow": [],
+            "depConstraints": [
+              {
+                "sourceTag": "scope:app",
+                "onlyDependOnLibsWithTags": [
+                  "scope:orders",
+                  "scope:inventory",
+                  "scope:payments",
+                  "scope:shared",
+                  "type:testing"
+                ]
+              },
+              {
+                "sourceTag": "scope:orders",
+                "onlyDependOnLibsWithTags": [
+                  "scope:inventory",
+                  "scope:payments",
+                  "scope:shared",
+                  "type:testing"
+                ]
+              },
+              {
+                "sourceTag": "scope:inventory",
+                "onlyDependOnLibsWithTags": ["scope:shared", "type:testing"]
+              },
+              {
+                "sourceTag": "scope:payments",
+                "onlyDependOnLibsWithTags": ["scope:shared", "type:testing"]
+              },
+              {
+                "sourceTag": "scope:shared",
+                "onlyDependOnLibsWithTags": ["type:testing"]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["*.ts", "*.tsx"],
       "extends": ["plugin:@nx/typescript", "prettier"],
       "rules": {}
