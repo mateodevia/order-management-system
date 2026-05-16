@@ -1,0 +1,34 @@
+{
+  "name": "orders",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/orders/src",
+  "projectType": "library",
+  "tags": ["scope:orders"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/orders",
+        "main": "libs/orders/src/index.ts",
+        "tsConfig": "libs/orders/tsconfig.lib.json",
+        "assets": []
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/orders/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/orders"],
+      "options": {
+        "jestConfig": "libs/orders/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

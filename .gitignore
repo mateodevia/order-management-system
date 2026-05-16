@@ -1,2 +1,21 @@
 # Local AI assistant context (not for version control)
 CLAUDE.md
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+tmp/
+
+# Nx cache
+.nx/cache
+.nx/workspace-data
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editor
+.DS_Store

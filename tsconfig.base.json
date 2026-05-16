@@ -1,0 +1,28 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "module": "commonjs",
+    "lib": ["es2022"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@oms/orders": ["libs/orders/src/index.ts"],
+      "@oms/inventory": ["libs/inventory/src/index.ts"],
+      "@oms/payments": ["libs/payments/src/index.ts"],
+      "@oms/shared/util-errors": ["libs/shared/util-errors/src/index.ts"],
+      "@oms/shared/request-logger": ["libs/shared/request-logger/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

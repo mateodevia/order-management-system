@@ -1,0 +1,60 @@
+{
+  "root": true,
+  "ignorePatterns": ["**/*"],
+  "plugins": ["@nx"],
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "rules": {
+        "@nx/enforce-module-boundaries": [
+          "error",
+          {
+            "enforceBuildableLibDependency": true,
+            "allow": [],
+            "depConstraints": [
+              {
+                "sourceTag": "scope:app",
+                "onlyDependOnLibsWithTags": [
+                  "scope:orders",
+                  "scope:inventory",
+                  "scope:payments",
+                  "scope:shared"
+                ]
+              },
+              {
+                "sourceTag": "scope:orders",
+                "onlyDependOnLibsWithTags": [
+                  "scope:inventory",
+                  "scope:payments",
+                  "scope:shared"
+                ]
+              },
+              {
+                "sourceTag": "scope:inventory",
+                "onlyDependOnLibsWithTags": ["scope:shared"]
+              },
+              {
+                "sourceTag": "scope:payments",
+                "onlyDependOnLibsWithTags": ["scope:shared"]
+              },
+              {
+                "sourceTag": "scope:shared",
+                "onlyDependOnLibsWithTags": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["*.ts", "*.tsx"],
+      "extends": ["plugin:@nx/typescript", "prettier"],
+      "rules": {}
+    },
+    {
+      "files": ["*.js", "*.jsx"],
+      "extends": ["plugin:@nx/javascript", "prettier"],
+      "rules": {}
+    }
+  ]
+}

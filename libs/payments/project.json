@@ -1,0 +1,34 @@
+{
+  "name": "payments",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/payments/src",
+  "projectType": "library",
+  "tags": ["scope:payments"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/payments",
+        "main": "libs/payments/src/index.ts",
+        "tsConfig": "libs/payments/tsconfig.lib.json",
+        "assets": []
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/payments/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/payments"],
+      "options": {
+        "jestConfig": "libs/payments/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
