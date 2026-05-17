@@ -24,7 +24,8 @@
       "@oms/shared/util-validation": ["libs/shared/util-validation/src/index.ts"],
       "@oms/shared/request-logger": ["libs/shared/request-logger/src/index.ts"],
       "@oms/shared/testing-utils": ["libs/shared/testing-utils/src/index.ts"],
-      "@oms/shared/database": ["libs/shared/database/src/index.ts"]
+      "@oms/shared/database": ["libs/shared/database/src/index.ts"],
+      "@oms/shared/geocoding": ["libs/shared/geocoding/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

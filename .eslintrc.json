@@ -39,7 +39,7 @@
               },
               {
                 "sourceTag": "scope:shared",
-                "onlyDependOnLibsWithTags": []
+                "onlyDependOnLibsWithTags": ["scope:shared"]
               }
             ]
           }
@@ -84,7 +84,7 @@
               },
               {
                 "sourceTag": "scope:shared",
-                "onlyDependOnLibsWithTags": ["type:testing"]
+                "onlyDependOnLibsWithTags": ["scope:shared", "type:testing"]
               }
             ]
           }
