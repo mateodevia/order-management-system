@@ -1,0 +1,35 @@
+{
+  "name": "shared-util-circuit-breaker",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/util-circuit-breaker/src",
+  "projectType": "library",
+  "tags": ["scope:shared"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/shared/util-circuit-breaker",
+        "main": "libs/shared/util-circuit-breaker/src/index.ts",
+        "tsConfig": "libs/shared/util-circuit-breaker/tsconfig.lib.json",
+        "rootDir": ".",
+        "assets": []
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["libs/shared/util-circuit-breaker/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/shared/util-circuit-breaker"],
+      "options": {
+        "jestConfig": "libs/shared/util-circuit-breaker/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
