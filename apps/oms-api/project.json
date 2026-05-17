@@ -12,6 +12,7 @@
         "outputPath": "dist/apps/oms-api",
         "main": "apps/oms-api/src/main.ts",
         "tsConfig": "apps/oms-api/tsconfig.app.json",
+        "rootDir": ".",
         "assets": []
       }
     },

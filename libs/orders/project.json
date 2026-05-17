@@ -12,6 +12,7 @@
         "outputPath": "dist/libs/orders",
         "main": "libs/orders/src/index.ts",
         "tsConfig": "libs/orders/tsconfig.lib.json",
+        "rootDir": ".",
         "assets": []
       }
     },

@@ -4,13 +4,21 @@
   "license": "MIT",
   "scripts": {
     "lint": "nx lint",
+    "start": "nx serve oms-api",
     "build": "nx build oms-api",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:generate": "dotenv -- npx drizzle-kit generate",
+    "db:migrate": "dotenv -- npx drizzle-kit migrate",
+    "db:setup": "dotenv -- tsx --tsconfig tsconfig.base.json tools/database/setup-db.ts",
+    "sys:init": "test -f .env || cp .env.example .env && docker compose up -d && npx wait-port 5433 && npm run db:setup"
   },
   "private": true,
   "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "express": "^4.19.2",
     "express-async-errors": "^3.1.1",
+    "pg": "^8.20.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -22,8 +30,11 @@
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.5",
+    "@types/pg": "^8.20.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "dotenv-cli": "^11.0.0",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
@@ -34,6 +45,7 @@
     "ts-jest": "^29.2.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.22.0",
-    "typescript": "~5.6.0"
+    "typescript": "~5.6.0",
+    "wait-port": "^1.1.0"
   }
 }

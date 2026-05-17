@@ -12,6 +12,7 @@
         "outputPath": "dist/libs/inventory",
         "main": "libs/inventory/src/index.ts",
         "tsConfig": "libs/inventory/tsconfig.lib.json",
+        "rootDir": ".",
         "assets": []
       }
     },
