@@ -185,7 +185,7 @@ async function createOrderFlow(
     const chargeAmount = computeOrderTotalAmount(payload.items, lockedRows);
 
     await deps.paymentClient.charge({
-      creditCardNumber: 'tok_visa_mock',
+      creditCardNumber: '4111111111111111',
       amount: chargeAmount,
       description: `Order ${orderId}`,
       idempotencyKey,

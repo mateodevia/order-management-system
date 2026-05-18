@@ -4,12 +4,11 @@ import { AppError } from '@oms/shared/util-errors';
 /** Parameters for a payment charge request. */
 export interface ChargeParams {
   /**
-   * Card identifier used for the charge.
+   * Raw credit card number used for the charge.
    *
-   * @remarks Passing raw credit card numbers through backend services violates PCI DSS
-   * scope principles. In production, the client side would perform tokenization
-   * (e.g., via Stripe.js or Braintree Drop-in UI) and the backend would receive a
-   * non-sensitive payment token instead of the raw PAN.
+   * @remarks As per the assessment instructions, we accept a raw credit card number here
+   * to keep the implementation simple ("we know in the real world we wouldn’t want to have
+   * people’s credit card numbers... but let’s imagine that it’s that simple").
    */
   creditCardNumber: string;
   /** Charge amount in the smallest currency unit (e.g. cents). */
@@ -43,7 +42,7 @@ export interface ChargeReceipt {
  */
 export interface IPaymentClient {
   /**
-   * Charges the payment gateway for the given amount and card token.
+   * Charges the payment gateway for the given amount and credit card number.
    *
    * @param params - Charge request including idempotency key.
    */
