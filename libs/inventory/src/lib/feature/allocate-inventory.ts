@@ -1,16 +1,14 @@
 import { sql } from 'drizzle-orm';
-import { db } from '@oms/shared/database';
-import type { OrderItem } from '@oms/shared/types';
+import { db, reuseTransactionIfAvailable, type DbTransaction } from '@oms/shared/database';
+import type { LockedInventoryRow, OrderItem } from '@oms/shared/types';
 import {
   decreaseInventory,
   lockClosestWarehouseInventory,
-  LockedInventoryRow,
   InventoryUpdate,
 } from '../data-access/inventory-queries';
 import { AppError } from '@oms/shared/util-errors';
 
 type Location = { lat: number; lng: number };
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 function isPostgresStatementTimeout(e: unknown): boolean {
   let current: unknown = e;
@@ -27,7 +25,7 @@ function isPostgresStatementTimeout(e: unknown): boolean {
  * Verifies that locked inventory rows still satisfy the order under READ COMMITTED.
  *
  * Between the routing query and `FOR UPDATE`, another transaction may have reduced
- * stock. Returns `false` when any line item is missing or below the requested qty.
+ * stock. Returns `false` when any line item is missing or below the requested quantity.
  *
  * @param lockedRows - Rows returned by {@link lockClosestWarehouseInventory}.
  * @param requestedByProductId - Requested quantities keyed by product id.
@@ -39,7 +37,7 @@ function isLockSufficient(
 ): boolean {
   for (const lockedRow of lockedRows) {
     const requested = requestedByProductId.get(lockedRow.productId);
-    if (!requested || lockedRow.quantity < requested.qty) {
+    if (!requested || lockedRow.quantity < requested.quantity) {
       return false;
     }
   }
@@ -89,54 +87,11 @@ async function lockInventoryWithReadCommittedRetry(
   return lockedRows;
 }
 
-async function allocateInventoryGeospatiallyLogic(
-  sortedItems: OrderItem[],
-  requestedByProductId: Map<string, OrderItem>,
-  shippingLocation: Location,
-  tx: DbTransaction,
-): Promise<string> {
-  try {
-    const startTime = Date.now();
-    console.log('Allocated inventory started at', startTime);
-    // Connection Pool Protection: kill this transaction after 3 seconds.
-    await tx.execute(sql`SET LOCAL statement_timeout = '3000ms'`);
+export type InventoryAllocationResult = {
+  warehouseId: string;
+  lockedRows: LockedInventoryRow[];
+};
 
-    const itemsJson = JSON.stringify(sortedItems);
-
-    // Spatial Relational Division + Lock (retry while READ COMMITTED snapshot is stale)
-    const lockedRows = await lockInventoryWithReadCommittedRetry(
-      tx,
-      itemsJson,
-      sortedItems.length,
-      shippingLocation,
-      requestedByProductId,
-    );
-
-    // Decrement inventory while holding exclusive locks using a single UPDATE ... FROM json_array_elements.
-    const fulfillingWarehouseId = lockedRows[0].warehouseId;
-    const updates: InventoryUpdate[] = lockedRows
-      .map((row) => {
-        const requested = requestedByProductId.get(row.productId);
-        if (!requested) return null;
-        return { warehouseId: fulfillingWarehouseId, productId: row.productId, qty: requested.qty };
-      })
-      .filter((u): u is InventoryUpdate => u !== null);
-
-    await decreaseInventory(updates, tx);
-
-    const endTime = Date.now();
-    console.log('Allocated inventory ended at', endTime);
-    console.log('Allocated inventory took', endTime - startTime, 'ms');
-
-    return fulfillingWarehouseId;
-  } catch (e) {
-    if (isPostgresStatementTimeout(e)) {
-      console.error('Inventory allocation timed out');
-      throw new AppError(503, 'could not acquire inventory lock');
-    }
-    throw e;
-  }
-}
 /**
  * Allocates inventory for a set of order items by finding and locking inventory rows
  * from the geographically closest single warehouse that can fulfill all requested quantities.
@@ -159,26 +114,57 @@ async function allocateInventoryGeospatiallyLogic(
 export async function allocateInventoryGeospatially(
   items: OrderItem[],
   shippingLocation: Location,
-  tx?: DbTransaction,
-): Promise<string> {
+  t?: DbTransaction,
+): Promise<InventoryAllocationResult> {
   // Deadlock Prevention: sort items lexically by productId before requesting locks.
   const sortedItems = [...items].sort((a, b) => a.productId.localeCompare(b.productId));
   const requestedByProductId = new Map(sortedItems.map((item) => [item.productId, item]));
 
-  if (tx) {
-    return await allocateInventoryGeospatiallyLogic(
-      sortedItems,
-      requestedByProductId,
-      shippingLocation,
-      tx,
-    );
-  }
-  return db.transaction(async (tx) => {
-    return await allocateInventoryGeospatiallyLogic(
-      sortedItems,
-      requestedByProductId,
-      shippingLocation,
-      tx,
-    );
+  return reuseTransactionIfAvailable(t, async (tx) => {
+    try {
+      const startTime = Date.now();
+      console.log('Allocated inventory started at', startTime);
+      // Connection Pool Protection: kill this transaction after 3 seconds.
+      await tx.execute(sql`SET LOCAL statement_timeout = '3000ms'`);
+
+      const itemsJson = JSON.stringify(sortedItems);
+
+      // Spatial Relational Division + Lock (retry while READ COMMITTED snapshot is stale)
+      const lockedRows = await lockInventoryWithReadCommittedRetry(
+        tx,
+        itemsJson,
+        sortedItems.length,
+        shippingLocation,
+        requestedByProductId,
+      );
+
+      // Decrement inventory while holding exclusive locks using a single UPDATE ... FROM json_array_elements.
+      const fulfillingWarehouseId = lockedRows[0].warehouseId;
+      const updates: InventoryUpdate[] = lockedRows
+        .map((row) => {
+          const requested = requestedByProductId.get(row.productId);
+          if (!requested) return null;
+          return {
+            warehouseId: fulfillingWarehouseId,
+            productId: row.productId,
+            quantity: requested.quantity,
+          };
+        })
+        .filter((u): u is InventoryUpdate => u !== null);
+
+      await decreaseInventory(updates, tx);
+
+      const endTime = Date.now();
+      console.log('Allocated inventory ended at', endTime);
+      console.log('Allocated inventory took', endTime - startTime, 'ms');
+
+      return { warehouseId: fulfillingWarehouseId, lockedRows };
+    } catch (e) {
+      if (isPostgresStatementTimeout(e)) {
+        console.error('Inventory allocation timed out');
+        throw new AppError(503, 'could not acquire inventory lock');
+      }
+      throw e;
+    }
   });
 }

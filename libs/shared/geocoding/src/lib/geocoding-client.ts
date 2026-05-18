@@ -6,7 +6,7 @@ export interface Coordinates {
 }
 
 /** Known mock addresses resolvable by {@link GeocodingClient}. */
-export enum GeocodingAddress {
+export enum GeocodingMockedAddress {
   Atlanta = '191 Peachtree St NE, Atlanta, GA',
   Chicago = 'Millennium Park, Chicago, IL',
   Dallas = '2100 Ross Ave, Dallas, TX',
@@ -15,11 +15,11 @@ export enum GeocodingAddress {
 }
 
 const ADDRESS_COORDINATES: Record<string, Coordinates> = {
-  [GeocodingAddress.Atlanta]: { lat: 33.7578, lng: -84.3876 },
-  [GeocodingAddress.Chicago]: { lat: 41.8826, lng: -87.6227 },
-  [GeocodingAddress.Dallas]: { lat: 32.7875, lng: -96.7963 },
-  [GeocodingAddress.Denver]: { lat: 39.7532, lng: -105.0001 },
-  [GeocodingAddress.Phoenix]: { lat: 33.4504, lng: -112.0675 },
+  [GeocodingMockedAddress.Atlanta]: { lat: 33.7578, lng: -84.3876 },
+  [GeocodingMockedAddress.Chicago]: { lat: 41.8826, lng: -87.6227 },
+  [GeocodingMockedAddress.Dallas]: { lat: 32.7875, lng: -96.7963 },
+  [GeocodingMockedAddress.Denver]: { lat: 39.7532, lng: -105.0001 },
+  [GeocodingMockedAddress.Phoenix]: { lat: 33.4504, lng: -112.0675 },
 };
 
 /**
@@ -31,7 +31,7 @@ const ADDRESS_COORDINATES: Record<string, Coordinates> = {
  */
 export interface IGeocodingClient {
   /** Resolves a free-text shipping address to a geographic coordinate pair. */
-  geocode(address: string): Coordinates;
+  geocode(address: string): Promise<Coordinates>;
 }
 
 /**
@@ -70,7 +70,7 @@ export class GeocodingClient implements IGeocodingClient {
     },
   };
 
-  geocode(address: string): Coordinates {
+  async geocode(address: string): Promise<Coordinates> {
     if (this.forcedError) {
       throw this.forcedError;
     }

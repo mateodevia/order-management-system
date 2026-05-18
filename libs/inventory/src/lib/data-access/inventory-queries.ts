@@ -1,16 +1,10 @@
 import { sql } from 'drizzle-orm';
-import { db } from '@oms/shared/database';
+import type { DbTransaction } from '@oms/shared/database';
+import type { LockedInventoryRow } from '@oms/shared/types';
 import { AppError } from '@oms/shared/util-errors';
-import { inventory } from './inventory.schema';
+import { Inventory } from './inventory.schema';
 
 type Location = { lat: number; lng: number };
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-export type LockedInventoryRow = {
-  warehouseId: string;
-  productId: string;
-  quantity: number;
-};
 
 /**
  * Attempts to acquire row-level locks on inventory entries for the closest single warehouse
@@ -22,7 +16,7 @@ export type LockedInventoryRow = {
  * - Locks, in deterministic product_id order, all relevant inventory rows within the selected warehouse.
  *
  * @param tx - The database transaction runner for the current Postgres transaction context.
- * @param itemsJson - JSON string representing the array of order items ({ productId, qty }).
+ * @param itemsJson - JSON string representing the array of order items ({ productId, quantity }).
  * @param expectedItemCount - The expected number of distinct items to be locked (should match order).
  * @param shippingLocation - The target shipping location ({ lat, lng }) for proximity routing.
  * @returns Promise resolving to the locked inventory rows for the qualifying, chosen warehouse.
@@ -38,7 +32,7 @@ export async function lockClosestWarehouseInventory(
     WITH requested_items AS (
       SELECT
         (value->>'productId')::uuid AS product_id,
-        (value->>'qty')::int AS required_qty
+        (value->>'quantity')::int AS required_quantity
       FROM json_array_elements(${itemsJson}::json)
     ),
     closest_warehouse AS (
@@ -49,7 +43,7 @@ export async function lockClosestWarehouseInventory(
           FROM requested_items ri
           LEFT JOIN inventory i
             ON i.warehouse_id = w.id AND i.product_id = ri.product_id
-          WHERE i.quantity IS NULL OR i.quantity < ri.required_qty
+          WHERE i.quantity IS NULL OR i.quantity < ri.required_quantity
       )
       ORDER BY w.location <-> ST_SetSRID(ST_MakePoint(${shippingLocation.lng}, ${shippingLocation.lat}), 4326)::geography
       LIMIT 1
@@ -57,7 +51,8 @@ export async function lockClosestWarehouseInventory(
     SELECT
       i.warehouse_id as "warehouseId",
       i.product_id as "productId",
-      i.quantity
+      i.quantity,
+      i.unit_price as "unitPrice"
     FROM inventory i
     JOIN closest_warehouse cw ON i.warehouse_id = cw.id
     WHERE i.product_id IN (SELECT product_id FROM requested_items)
@@ -76,16 +71,16 @@ export async function lockClosestWarehouseInventory(
   return res.rows;
 }
 
-export type InventoryUpdate = { warehouseId: string; productId: string; qty: number };
+export type InventoryUpdate = { warehouseId: string; productId: string; quantity: number };
 
 export async function decreaseInventory(updates: InventoryUpdate[], tx: DbTransaction) {
   await Promise.all(
     updates.map((u) =>
       tx
-        .update(inventory)
-        .set({ quantity: sql`${inventory.quantity} - ${u.qty}` })
+        .update(Inventory)
+        .set({ quantity: sql`${Inventory.quantity} - ${u.quantity}` })
         .where(
-          sql`${inventory.warehouseId} = ${u.warehouseId} AND ${inventory.productId} = ${u.productId}`,
+          sql`${Inventory.warehouseId} = ${u.warehouseId} AND ${Inventory.productId} = ${u.productId}`,
         ),
     ),
   );

@@ -1,7 +1,10 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 const PG_TABLE_PATTERN = /pgTable\(\s*['"]([^'"]+)['"]/g;
+
+/** Workspace `libs/` directory — domain schemas live under inventory, orders, etc. */
+export const SCHEMA_LIBS_ROOT = resolve(__dirname, '../../../..');
 
 function findSchemaFiles(dir: string): string[] {
   const files: string[] = [];
@@ -18,7 +21,7 @@ function findSchemaFiles(dir: string): string[] {
   return files;
 }
 
-export function loadSchemaTableNames(libsRoot: string): string[] {
+export function loadSchemaTableNames(libsRoot: string = SCHEMA_LIBS_ROOT): string[] {
   const tableNames = new Set<string>();
 
   for (const file of findSchemaFiles(libsRoot)) {

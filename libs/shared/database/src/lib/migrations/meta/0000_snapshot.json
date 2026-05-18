@@ -177,12 +177,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "total_amount": {
-          "name": "total_amount",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": true
-        },
         "idempotency_key": {
           "name": "idempotency_key",
           "type": "varchar",

@@ -1,1 +1,1 @@
-export type OrderItem = { productId: string; qty: number };
+export type OrderItem = { productId: string; quantity: number };

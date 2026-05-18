@@ -2,6 +2,7 @@ CREATE TABLE "inventory" (
 	"warehouse_id" uuid NOT NULL,
 	"product_id" uuid NOT NULL,
 	"quantity" integer NOT NULL,
+	"unit_price" integer NOT NULL,
 	CONSTRAINT "inventory_warehouse_id_product_id_pk" PRIMARY KEY("warehouse_id","product_id"),
 	CONSTRAINT "inventory_quantity_non_negative" CHECK ("quantity" >= 0)
 );
@@ -24,7 +25,6 @@ CREATE TABLE "orders" (
 	"customer_id" uuid NOT NULL,
 	"warehouse_id" uuid,
 	"status" text NOT NULL,
-	"total_amount" numeric NOT NULL,
 	"idempotency_key" varchar NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
