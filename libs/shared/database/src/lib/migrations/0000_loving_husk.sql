@@ -2,7 +2,8 @@ CREATE TABLE "inventory" (
 	"warehouse_id" uuid NOT NULL,
 	"product_id" uuid NOT NULL,
 	"quantity" integer NOT NULL,
-	CONSTRAINT "inventory_warehouse_id_product_id_pk" PRIMARY KEY("warehouse_id","product_id")
+	CONSTRAINT "inventory_warehouse_id_product_id_pk" PRIMARY KEY("warehouse_id","product_id"),
+	CONSTRAINT "inventory_quantity_non_negative" CHECK ("quantity" >= 0)
 );
 --> statement-breakpoint
 CREATE TABLE "warehouses" (

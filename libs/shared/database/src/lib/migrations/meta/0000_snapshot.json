@@ -40,7 +40,12 @@
       },
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "inventory_quantity_non_negative": {
+          "name": "inventory_quantity_non_negative",
+          "value": "\"quantity\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.warehouses": {

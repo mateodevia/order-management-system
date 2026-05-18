@@ -27,6 +27,9 @@ ordersRouter.post(
                 quantity: z.number().int().min(1),
               }),
             )
+            .refine(uniqueByProductId, {
+              message: 'items must not contain duplicate productId values',
+            })
             .nonempty(),
         })
         .strict(),
@@ -36,3 +39,7 @@ ordersRouter.post(
     },
   ),
 );
+
+function uniqueByProductId(items: { productId: string; quantity: number }[]): boolean {
+  return new Set(items.map((item) => item.productId)).size === items.length;
+}
