@@ -27,7 +27,8 @@
       "@oms/shared/database": ["libs/shared/database/src/index.ts"],
       "@oms/shared/geocoding": ["libs/shared/geocoding/src/index.ts"],
       "@oms/shared/util-circuit-breaker": ["libs/shared/util-circuit-breaker/src/index.ts"],
-      "@oms/shared/types": ["libs/shared/types/src/index.ts"]
+      "@oms/shared/types": ["libs/shared/types/src/index.ts"],
+      "@oms/shared/monitoring": ["libs/shared/monitoring/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

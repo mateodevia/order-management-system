@@ -1,3 +1,4 @@
+import { customLogger } from '@oms/shared/monitoring';
 import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from './app-error';
@@ -18,11 +19,13 @@ export function globalErrorHandler(err: unknown, _req: Request, res: Response, _
   }
 
   if (err instanceof ZodError) {
-    console.error('[input validation error]', JSON.stringify(err.issues));
+    customLogger.warn('input validation error', { issues: err.issues });
     res.status(400).json({ error: 'Invalid payload structure' });
     return;
   }
 
-  console.error('[unhandled exception]', err instanceof Error ? err.stack : err);
+  customLogger.error('unhandled exception', {
+    error: err instanceof Error ? err.stack : err,
+  });
   res.status(500).json({ error: 'Internal Server Error' });
 }

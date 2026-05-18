@@ -1,3 +1,4 @@
+import { customLogger } from '@oms/shared/monitoring';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
@@ -19,15 +20,15 @@ async function main() {
   const pool = new Pool({ connectionString });
   const db = drizzle(pool);
 
-  console.log('Enabling PostGIS extension...');
+  customLogger.info('Enabling PostGIS extension');
   await pool.query('CREATE EXTENSION IF NOT EXISTS postgis;');
 
-  console.log('Running migrations...');
+  customLogger.info('Running migrations');
   await migrate(db, {
     migrationsFolder: path.resolve(__dirname, '../../libs/shared/database/src/lib/migrations'),
   });
 
-  console.log('Truncating existing data...');
+  customLogger.info('Truncating existing data');
   const tableNames = loadSchemaTableNames();
   if (tableNames.length === 0) {
     throw new Error('No tables found in schema files');
@@ -35,7 +36,7 @@ async function main() {
   // Safe: table names are statically extracted from our own .schema.ts files, not user input
   await db.execute(sql.raw(`TRUNCATE TABLE ${tableNames.join(', ')} CASCADE`));
 
-  console.log('Seeding warehouses...');
+  customLogger.info('Seeding warehouses');
   const seededWarehouses = await db
     .insert(Warehouses)
     .values([
@@ -62,7 +63,7 @@ async function main() {
     ])
     .returning({ id: Warehouses.id, name: Warehouses.name });
 
-  console.log(`Seeded ${seededWarehouses.length} warehouses`);
+  customLogger.info('Seeded warehouses', { count: seededWarehouses.length });
 
   const productIds = [
     '11111111-1111-1111-1111-111111111111',
@@ -72,7 +73,7 @@ async function main() {
     '55555555-5555-5555-5555-555555555555',
   ];
 
-  console.log('Seeding inventory...');
+  customLogger.info('Seeding inventory');
   const inventoryRows = seededWarehouses.flatMap((wh) =>
     productIds.map((productId, idx) => ({
       warehouseId: wh.id,
@@ -83,13 +84,15 @@ async function main() {
   );
 
   await db.insert(Inventory).values(inventoryRows);
-  console.log(`Seeded ${inventoryRows.length} inventory records`);
+  customLogger.info('Seeded inventory records', { count: inventoryRows.length });
 
   await pool.end();
-  console.log('Database setup complete.');
+  customLogger.info('Database setup complete');
 }
 
 main().catch((err) => {
-  console.error('Setup failed:', err);
+  customLogger.error('Setup failed', {
+    error: err instanceof Error ? err.message : String(err),
+  });
   process.exit(1);
 });

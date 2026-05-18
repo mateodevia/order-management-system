@@ -1,4 +1,5 @@
 import { PaymentClient, withCircuitBreaker } from '@oms/payments';
+import { customLogger } from '@oms/shared/monitoring';
 import { paymentBreaker } from '@oms/shared/util-circuit-breaker';
 import { runReconciliationCycle, type ReconciliationWorkerConfig } from './reconciliation-worker';
 
@@ -29,13 +30,15 @@ export function startReconciliationScheduler(intervalMs = DEFAULT_INTERVAL_MS): 
   async function tick() {
     if (!running) return;
     try {
-      console.log('Running reconciliation cycle');
+      customLogger.info('Running reconciliation cycle');
       const processed = await runReconciliationCycle(config);
       if (processed > 0) {
-        console.log(`Reconciliation cycle processed ${processed} orders`);
+        customLogger.info('Reconciliation cycle processed orders', { processed });
       }
     } catch (err) {
-      console.error('Reconciliation cycle failed:', err);
+      customLogger.error('Reconciliation cycle failed', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
     if (running) {
       setTimeout(tick, intervalMs);
@@ -43,7 +46,7 @@ export function startReconciliationScheduler(intervalMs = DEFAULT_INTERVAL_MS): 
   }
 
   setTimeout(tick, intervalMs);
-  console.log(`Reconciliation scheduler started (interval: ${intervalMs}ms)`);
+  customLogger.info('Reconciliation scheduler started', { intervalMs });
 
   return {
     stop() {

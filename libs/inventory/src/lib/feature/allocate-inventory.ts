@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db, reuseTransactionIfAvailable, type DbTransaction } from '@oms/shared/database';
+import { customLogger, sendMetric } from '@oms/shared/monitoring';
 import type { LockedInventoryRow, OrderItem } from '@oms/shared/types';
 import {
   decreaseInventory,
@@ -82,7 +83,7 @@ async function lockInventoryWithReadCommittedRetry(
   );
 
   while (!isLockSufficient(lockedRows, requestedByProductId)) {
-    console.log('Lock acquired, but not sufficient, retrying...');
+    customLogger.debug('Lock acquired but not sufficient, retrying');
     lockedRows = await lockClosestWarehouseInventory(
       itemsJson,
       expectedItemCount,
@@ -133,7 +134,7 @@ export async function allocateInventoryGeospatially(
   return reuseTransactionIfAvailable(t, async (tx) => {
     try {
       const startTime = Date.now();
-      console.log('Allocated inventory started at', startTime);
+      customLogger.debug('inventory allocation started', { startTime });
       // Connection Pool Protection: kill this transaction after 3 seconds.
       await tx.execute(sql`SET LOCAL statement_timeout = '3000ms'`);
 
@@ -164,14 +165,15 @@ export async function allocateInventoryGeospatially(
 
       await decreaseInventory(updates, tx);
 
-      const endTime = Date.now();
-      console.log('Allocated inventory ended at', endTime);
-      console.log('Allocated inventory took', endTime - startTime, 'ms');
+      sendMetric('inventory.allocation.duration_ms', Date.now() - startTime, {
+        type: 'gauge',
+        tags: { itemCount: String(sortedItems.length) },
+      });
 
       return { warehouseId: fulfillingWarehouseId, lockedRows };
     } catch (e) {
       if (isPostgresStatementTimeout(e)) {
-        console.error('Inventory allocation timed out');
+        customLogger.error('Inventory allocation timed out');
         throw new AppError(503, 'could not acquire inventory lock');
       }
       throw e;

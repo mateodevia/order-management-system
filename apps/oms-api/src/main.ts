@@ -1,10 +1,11 @@
 import 'express-async-errors';
-import { app } from './app';
 import { startReconciliationScheduler } from '@oms/orders';
+import { customLogger } from '@oms/shared/monitoring';
+import { app } from './app';
 
 const PORT = process.env['PORT'] ?? 3000;
 
 app.listen(PORT, () => {
-  console.log(`OMS API listening on port ${PORT}`);
+  customLogger.info('OMS API listening', { port: PORT });
   startReconciliationScheduler();
 });

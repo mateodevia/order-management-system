@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { DbTransaction } from '@oms/shared/database';
+import { customLogger } from '@oms/shared/monitoring';
 import type { LockedInventoryRow } from '@oms/shared/types';
 import { AppError } from '@oms/shared/util-errors';
 import { Inventory } from './inventory.schema';
@@ -62,7 +63,7 @@ export async function lockClosestWarehouseInventory(
   `);
 
   if (res.rows.length !== expectedItemCount) {
-    console.error('No single warehouse has sufficient stock to fulfill the entire order.');
+    customLogger.warn('No single warehouse has sufficient stock to fulfill the entire order');
     throw new AppError(
       422,
       'No single warehouse has sufficient stock to fulfill the entire order.',

@@ -2,6 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from '@oms/shared/database';
 import type { DbTransaction } from '@oms/shared/database';
 import type { IPaymentClient } from '@oms/payments';
+import { sendAlert } from '@oms/shared/monitoring';
 import { PaymentStatus } from '@oms/shared/types';
 import { Orders } from '../data-access/orders.schema';
 import { OrderItems } from '../data-access/order-items.schema';
@@ -78,6 +79,19 @@ async function reconcileOrder(
         .update(Orders)
         .set({ status: 'DLQ', retryCount: newRetryCount })
         .where(eq(Orders.id, order.id));
+
+      sendAlert({
+        title: 'Reconciliation DLQ',
+        message: 'Order exceeded max reconciliation retries and requires manual intervention',
+        severity: 'critical',
+        context: {
+          orderId: order.id,
+          idempotencyKey: order.idempotencyKey,
+          warehouseId: order.warehouseId,
+          retryCount: newRetryCount,
+          maxRetries: config.maxRetries,
+        },
+      });
       return;
     }
 
