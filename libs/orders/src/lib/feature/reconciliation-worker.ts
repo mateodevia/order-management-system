@@ -7,19 +7,41 @@ import { Orders } from '../data-access/orders.schema';
 import { OrderItems } from '../data-access/order-items.schema';
 import { cancelPendingOrder } from '../data-access/order-service';
 
+/** Runtime configuration for a single reconciliation cycle. */
 export interface ReconciliationWorkerConfig {
+  /** Gateway client used to resolve charge status by idempotency key. */
   paymentClient: IPaymentClient;
+  /** Maximum number of stale orders to process per cycle. */
   batchSize: number;
+  /** Retry attempts after which an order is moved to DLQ. */
   maxRetries: number;
+  /** Base delay (ms) for exponential backoff with jitter between retries. */
   baseDelayMs: number;
 }
 
+/**
+ * Computes the next reconciliation retry timestamp using exponential backoff and jitter.
+ *
+ * @param retryCount - Number of prior retries for the order.
+ * @param baseDelayMs - Base delay in milliseconds before the first retry.
+ * @returns Scheduled time for the next reconciliation attempt.
+ */
 export function computeNextRetryAt(retryCount: number, baseDelayMs: number): Date {
   const exponentialDelay = baseDelayMs * Math.pow(2, retryCount);
   const jitter = Math.random() * exponentialDelay;
   return new Date(Date.now() + exponentialDelay + jitter);
 }
 
+/**
+ * Reconciles a single stale `PENDING_PAYMENT` order within an open transaction.
+ *
+ * Queries the payment gateway, then marks PAID, compensates on terminal failure,
+ * schedules a retry, or moves the order to DLQ when retries are exhausted.
+ *
+ * @param tx - Active database transaction (caller holds row locks).
+ * @param order - Order row fields required for reconciliation.
+ * @param config - Worker configuration including the payment client.
+ */
 async function reconcileOrder(
   tx: DbTransaction,
   order: { id: string; idempotencyKey: string; warehouseId: string; retryCount: number },
@@ -67,6 +89,15 @@ async function reconcileOrder(
   }
 }
 
+/**
+ * Runs one reconciliation batch for stale `PENDING_PAYMENT` orders.
+ *
+ * Selects eligible rows with `FOR UPDATE SKIP LOCKED`, reconciles each in the
+ * same transaction, and returns how many orders were processed.
+ *
+ * @param config - Worker configuration.
+ * @returns Number of orders selected and reconciled in this cycle.
+ */
 export async function runReconciliationCycle(config: ReconciliationWorkerConfig): Promise<number> {
   return db.transaction(async (tx) => {
     const result = await tx.execute(

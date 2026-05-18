@@ -42,8 +42,17 @@ export interface ChargeReceipt {
  * refactor, and prevents test-only helpers from leaking into production call-sites.
  */
 export interface IPaymentClient {
+  /**
+   * Charges the payment gateway for the given amount and card token.
+   *
+   * @param params - Charge request including idempotency key.
+   */
   charge(params: ChargeParams): Promise<ChargeReceipt>;
-  /** Queries the gateway for the outcome of a previous charge by idempotency key. */
+  /**
+   * Queries the gateway for the outcome of a previous charge by idempotency key.
+   *
+   * @param idempotencyKey - Key originally supplied to {@link IPaymentClient.charge}.
+   */
   getStatus(idempotencyKey: string): Promise<PaymentStatus>;
 }
 

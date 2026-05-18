@@ -4,6 +4,12 @@ import { loadSchemaTableNames } from './load-schema-tables';
 
 let domainTableNames: string[] | undefined;
 
+/**
+ * Lazily loads and caches domain table names from Drizzle schema files.
+ *
+ * @returns Table names safe to truncate in integration tests.
+ * @throws When no schema tables are discovered.
+ */
 function getDomainTableNames(): string[] {
   if (domainTableNames === undefined) {
     domainTableNames = loadSchemaTableNames();
@@ -16,6 +22,8 @@ function getDomainTableNames(): string[] {
 
 /**
  * Truncates all domain tables. PostGIS system tables are never touched.
+ *
+ * @param database - Drizzle client exposing `execute` (defaults to the shared {@link db}).
  */
 export async function truncateAllTables(database: Pick<typeof db, 'execute'> = db): Promise<void> {
   const tableNames = getDomainTableNames();

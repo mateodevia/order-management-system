@@ -1,5 +1,6 @@
 import { AppError } from '@oms/shared/util-errors';
 
+/** WGS84 latitude/longitude pair returned by geocoding. */
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -30,7 +31,11 @@ const ADDRESS_COORDINATES: Record<string, Coordinates> = {
  * a refactor, and prevents test-only helpers from leaking into production call-sites.
  */
 export interface IGeocodingClient {
-  /** Resolves a free-text shipping address to a geographic coordinate pair. */
+  /**
+   * Resolves a free-text shipping address to a geographic coordinate pair.
+   *
+   * @param address - Shipping address string from the order payload.
+   */
   geocode(address: string): Promise<Coordinates>;
 }
 
@@ -70,6 +75,13 @@ export class GeocodingClient implements IGeocodingClient {
     },
   };
 
+  /**
+   * Resolves a shipping address to coordinates using the mock address lookup table.
+   *
+   * @param address - Free-text address; must match a {@link GeocodingMockedAddress} value in dev.
+   * @returns Latitude and longitude for the address.
+   * @throws {@link AppError} 400 when the address is not in the mock table.
+   */
   async geocode(address: string): Promise<Coordinates> {
     if (this.forcedError) {
       throw this.forcedError;

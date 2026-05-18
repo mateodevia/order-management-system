@@ -1,4 +1,11 @@
+/**
+ * Operational HTTP error with an explicit status code for the global error handler.
+ */
 export class AppError extends Error {
+  /**
+   * @param statusCode - HTTP status to return to the client.
+   * @param message - Safe, client-visible error message.
+   */
   constructor(
     public readonly statusCode: number,
     message: string,

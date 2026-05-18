@@ -9,7 +9,14 @@ const DEFAULT_CONFIG: Omit<ReconciliationWorkerConfig, 'paymentClient'> = {
   baseDelayMs: 60_000,
 };
 
+/**
+ * Starts a background loop that periodically runs {@link runReconciliationCycle}.
+ *
+ * @param intervalMs - Milliseconds between reconciliation cycles (default 5s).
+ * @returns Handle with a `stop` method to halt future cycles.
+ */
 export function startReconciliationScheduler(intervalMs = DEFAULT_INTERVAL_MS): {
+  /** Stops scheduling further reconciliation cycles after the current tick completes. */
   stop: () => void;
 } {
   const config: ReconciliationWorkerConfig = {

@@ -8,8 +8,15 @@ import {
 } from '../data-access/inventory-queries';
 import { AppError } from '@oms/shared/util-errors';
 
+/** WGS84 geographic coordinate pair for the shipping destination. */
 type Location = { lat: number; lng: number };
 
+/**
+ * Detects Postgres statement-timeout errors (SQLSTATE 57014) in the error cause chain.
+ *
+ * @param e - Caught error from the allocation transaction.
+ * @returns `true` when the statement timeout was exceeded.
+ */
 function isPostgresStatementTimeout(e: unknown): boolean {
   let current: unknown = e;
   while (current && typeof current === 'object') {
@@ -87,8 +94,11 @@ async function lockInventoryWithReadCommittedRetry(
   return lockedRows;
 }
 
+/** Result of a successful geospatial inventory allocation. */
 export type InventoryAllocationResult = {
+  /** Warehouse that fulfilled every line item. */
   warehouseId: string;
+  /** Locked inventory rows used for pricing and verification. */
   lockedRows: LockedInventoryRow[];
 };
 

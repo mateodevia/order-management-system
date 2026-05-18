@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { pgTable, uuid, text, varchar, timestamp, uniqueIndex, integer, check } from 'drizzle-orm/pg-core';
 
+/** Drizzle schema for the `orders` table (lifecycle + idempotency). */
 export const Orders = pgTable(
   'orders',
   {

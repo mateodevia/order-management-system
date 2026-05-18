@@ -4,6 +4,7 @@ import type { LockedInventoryRow } from '@oms/shared/types';
 import { AppError } from '@oms/shared/util-errors';
 import { Inventory } from './inventory.schema';
 
+/** WGS84 geographic coordinate pair used for warehouse proximity routing. */
 type Location = { lat: number; lng: number };
 
 /**
@@ -71,8 +72,15 @@ export async function lockClosestWarehouseInventory(
   return res.rows;
 }
 
+/** Single inventory decrement applied after row locks are held. */
 export type InventoryUpdate = { warehouseId: string; productId: string; quantity: number };
 
+/**
+ * Decrements inventory quantities for the given warehouse/product pairs.
+ *
+ * @param updates - Rows and quantities to subtract (must already be locked).
+ * @param tx - Active database transaction.
+ */
 export async function decreaseInventory(updates: InventoryUpdate[], tx: DbTransaction) {
   await Promise.all(
     updates.map((u) =>

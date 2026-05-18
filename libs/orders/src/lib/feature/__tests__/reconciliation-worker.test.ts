@@ -22,6 +22,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
+/** Inserts a warehouse with PostGIS location and one SKU for reconciliation tests. */
 async function seedWarehouseAndInventory() {
   const [warehouse] = await db
     .insert(Warehouses)
@@ -42,6 +43,7 @@ async function seedWarehouseAndInventory() {
   return { warehouseId: warehouse.id, productId };
 }
 
+/** Inserts a `PENDING_PAYMENT` order, optionally with line items, for reconciliation tests. */
 async function seedPendingOrder(overrides: {
   warehouseId?: string;
   productId?: string;
@@ -73,6 +75,7 @@ async function seedPendingOrder(overrides: {
   return { orderId: order.id, idempotencyKey };
 }
 
+/** Builds a {@link ReconciliationWorkerConfig} with test-friendly defaults. */
 function makeConfig(
   paymentClient: PaymentClient,
   overrides?: Partial<ReconciliationWorkerConfig>,

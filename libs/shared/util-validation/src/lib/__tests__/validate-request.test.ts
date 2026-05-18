@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z, ZodError } from 'zod';
 import { validateRequest } from '../validate-request';
 
+/** Creates a minimal Express {@link Request} stub for middleware unit tests. */
 function makeReq(overrides: Partial<Request> = {}): Request {
   return { headers: {}, body: {}, ...overrides } as Request;
 }

@@ -8,27 +8,43 @@ import type { IPaymentClient } from '@oms/payments';
 import type { IGeocodingClient } from '@oms/shared/geocoding';
 import type { LockedInventoryRow, OrderItem } from '@oms/shared/types';
 
+/** Validated input for the order creation flow. */
 export interface OrderPayload {
+  /** Customer placing the order. */
   customerId: string;
+  /** Free-text shipping address geocoded during Phase 1. */
   shippingAddress: string;
+  /** Line items to fulfill from a single warehouse. */
   items: OrderItem[];
 }
 
+/** HTTP response envelope returned by {@link createOrderService}. */
 export interface CreateOrderResult {
+  /** HTTP status code (201, 200, or surfaced via thrown {@link AppError}). */
   status: number;
   data: {
     orderId: string;
     warehouseId: string;
     status: string;
+    /** Present when the response is rebuilt from an existing idempotent order. */
     cached?: boolean;
   };
 }
 
+/** Injectable dependencies for the order creation orchestrator. */
 interface OrderServiceDeps {
+  /** Payment gateway used in Phase 2 and reconciliation. */
   paymentClient: IPaymentClient;
+  /** Geocoding service used to resolve the shipping address in Phase 1. */
   geocodingClient: IGeocodingClient;
 }
 
+/**
+ * Walks the error cause chain for a Postgres unique violation on `orders.idempotency_key`.
+ *
+ * @param error - Caught error from Phase 1 insert.
+ * @returns `true` when the error is constraint `orders_idempotency_key_idx` (SQLSTATE 23505).
+ */
 function isIdempotencyKeyViolation(error: unknown): boolean {
   let current: unknown = error;
   while (current && typeof current === 'object') {
@@ -41,20 +57,21 @@ function isIdempotencyKeyViolation(error: unknown): boolean {
   return false;
 }
 
-/**
- * Phase 1: DB-only reservation transaction.
- *
- * Geocodes the shipping address, allocates inventory from the closest warehouse,
- * inserts the order as PENDING_PAYMENT, and inserts order line items.
- * All within a single transaction with a statement timeout.
- * Returns the order ID and warehouse ID on success.
- */
+/** Outcome of Phase 1 inventory reservation and order insert. */
 interface ReservationResult {
   orderId: string;
   warehouseId: string;
   lockedRows: LockedInventoryRow[];
 }
 
+/**
+ * Phase 1: geocode, allocate inventory, insert `PENDING_PAYMENT` order and line items.
+ *
+ * @param payload - Order input.
+ * @param idempotencyKey - Client idempotency key stored on the order row.
+ * @param geocodingClient - Address geocoding dependency.
+ * @returns New order id, fulfilling warehouse id, and locked inventory rows (for pricing).
+ */
 async function reserveInventory(
   payload: OrderPayload,
   idempotencyKey: string,
@@ -94,6 +111,13 @@ async function reserveInventory(
   });
 }
 
+/**
+ * Sums line totals using unit prices from the locked inventory snapshot.
+ *
+ * @param items - Requested order line items.
+ * @param lockedRows - Inventory rows locked during allocation (carry `unitPrice`).
+ * @returns Charge amount in the smallest currency unit (e.g. cents).
+ */
 function computeOrderTotalAmount(items: OrderItem[], lockedRows: LockedInventoryRow[]): number {
   const unitPriceByProductId = new Map(lockedRows.map((r) => [r.productId, r.unitPrice]));
   return items.reduce((sum, item) => {
@@ -105,7 +129,12 @@ function computeOrderTotalAmount(items: OrderItem[], lockedRows: LockedInventory
 /**
  * Phase 3 (compensation): Restores inventory and marks the order as FAILED.
  *
- * Called when Phase 2 payment fails. Runs in its own short transaction.
+ * Called when Phase 2 payment fails or reconciliation determines the charge did not succeed.
+ *
+ * @param orderId - Order to mark terminal.
+ * @param warehouseId - Warehouse whose inventory rows are restored.
+ * @param items - Line items whose quantities are added back to stock.
+ * @param outerTx - Optional transaction to join (reconciliation passes its open tx).
  */
 export async function cancelPendingOrder(
   orderId: string,
@@ -131,6 +160,13 @@ export async function cancelPendingOrder(
  *   Phase 1: Reserve inventory + insert order (single DB tx, no network I/O)
  *   Phase 2: Charge payment gateway (no open DB tx)
  *   Phase 3: Update order to PAID, or compensate on failure
+ */
+/**
+ * Executes Phase 1 → Phase 2 → Phase 3 without idempotency recovery.
+ *
+ * @param payload - Order input.
+ * @param idempotencyKey - Client idempotency key forwarded to the payment gateway.
+ * @param deps - Payment and geocoding clients.
  */
 async function createOrderFlow(
   payload: OrderPayload,
@@ -179,6 +215,10 @@ async function createOrderFlow(
  *   - PENDING_PAYMENT → 409 (in-flight)
  *   - PAID → 200 with cached response
  *   - FAILED → transparent retry (previous attempt restored inventory)
+ *
+ * @param payload - Validated order input.
+ * @param idempotencyKey - Client idempotency key from `x-idempotency-key`.
+ * @param deps - Payment and geocoding clients.
  */
 export async function createOrderService(
   payload: OrderPayload,

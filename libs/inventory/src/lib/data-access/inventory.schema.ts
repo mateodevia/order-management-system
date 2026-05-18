@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { pgTable, uuid, integer, primaryKey, check } from 'drizzle-orm/pg-core';
 
+/** Drizzle schema for aggregate per-SKU inventory quantities by warehouse. */
 export const Inventory = pgTable(
   'inventory',
   {

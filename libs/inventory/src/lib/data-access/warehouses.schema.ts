@@ -1,6 +1,7 @@
 import { pgTable, uuid, varchar, index } from 'drizzle-orm/pg-core';
 import { geography } from '@oms/shared/database';
 
+/** Drizzle schema for warehouse locations (PostGIS geography + GiST index). */
 export const Warehouses = pgTable(
   'warehouses',
   {

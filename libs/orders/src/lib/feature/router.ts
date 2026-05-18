@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { validateRequest } from '@oms/shared/util-validation';
 import { createOrder } from './create-order';
 
+/** Express router mounting order creation routes under `/orders`. */
 export const ordersRouter = Router();
 
 ordersRouter.post(
@@ -38,6 +39,12 @@ ordersRouter.post(
   ),
 );
 
+/**
+ * Zod refine predicate ensuring order line items do not repeat the same product.
+ *
+ * @param items - Parsed order line items from the request body.
+ * @returns `true` when every `productId` appears at most once.
+ */
 function uniqueByProductId(items: { productId: string; quantity: number }[]): boolean {
   return new Set(items.map((item) => item.productId)).size === items.length;
 }

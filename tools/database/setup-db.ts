@@ -7,6 +7,9 @@ import { Inventory } from '../../libs/inventory/src/lib/data-access/inventory.sc
 import path from 'path';
 import { loadSchemaTableNames } from '../../libs/shared/database/src/lib/load-schema-tables';
 
+/**
+ * One-shot database bootstrap: PostGIS, migrations, truncate, and seed warehouses/inventory.
+ */
 async function main() {
   const connectionString = process.env['DATABASE_URL'];
   if (!connectionString) {

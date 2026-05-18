@@ -24,6 +24,7 @@ export interface CircuitBreakerConfig {
   requestTimeout: number;
 }
 
+/** Numeric states exposed by the underlying cockatiel breaker policy. */
 export const CircuitState = {
   Closed: 0,
   Open: 1,
@@ -31,8 +32,10 @@ export const CircuitState = {
   Isolated: 3,
 } as const;
 
+/** Union of all {@link CircuitState} constant values. */
 export type CircuitState = (typeof CircuitState)[keyof typeof CircuitState];
 
+/** Subscription handle returned by circuit breaker event hooks. */
 export type EventListener<T> = (listener: (data: T) => void) => { dispose(): void };
 
 /*
@@ -72,14 +75,28 @@ export type EventListener<T> = (listener: (data: T) => void) => { dispose(): voi
  * providing cluster-wide failure containment through asynchronous coordination.
  */
 
+/** Facade over cockatiel policies with operational HTTP errors on open/timeout. */
 export interface CircuitBreaker {
   readonly state: CircuitState;
   readonly onBreak: EventListener<unknown>;
   readonly onReset: EventListener<void>;
   readonly onHalfOpen: EventListener<void>;
+  /**
+   * Runs `fn` through consecutive-failure and request-timeout policies.
+   *
+   * @param fn - Async or sync operation to protect (e.g. outbound HTTP call).
+   * @returns Result of `fn` when the circuit is closed and the call completes in time.
+   * @throws {@link AppError} with 503 when the circuit is open or the request times out.
+   */
   execute<T>(fn: () => Promise<T> | T): Promise<T>;
 }
 
+/**
+ * Creates an in-process circuit breaker with consecutive-failure and per-request timeout policies.
+ *
+ * @param config - Failure threshold, cooldown, and timeout settings (milliseconds).
+ * @returns {@link CircuitBreaker} instance for wrapping external client calls.
+ */
 export function createCircuitBreaker(config: CircuitBreakerConfig): CircuitBreaker {
   const timeoutPolicy = timeout(
     config.requestTimeout,
