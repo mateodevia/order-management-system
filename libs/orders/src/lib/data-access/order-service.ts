@@ -1,12 +1,12 @@
 import { eq, sql } from 'drizzle-orm';
-import { db, type DbTransaction } from '@oms/shared/database';
+import { db, reuseTransactionIfAvailable, type DbTransaction } from '@oms/shared/database';
 import { AppError } from '@oms/shared/util-errors';
 import { allocateInventoryGeospatially } from '@oms/inventory';
 import { Orders } from './orders.schema';
 import { OrderItems } from './order-items.schema';
 import type { IPaymentClient } from '@oms/payments';
 import type { IGeocodingClient } from '@oms/shared/geocoding';
-import { LockedInventoryRow, type OrderItem } from '@oms/shared/types';
+import type { LockedInventoryRow, OrderItem } from '@oms/shared/types';
 
 export interface OrderPayload {
   customerId: string;
@@ -97,7 +97,7 @@ async function reserveInventory(
 function computeOrderTotalAmount(items: OrderItem[], lockedRows: LockedInventoryRow[]): number {
   const unitPriceByProductId = new Map(lockedRows.map((r) => [r.productId, r.unitPrice]));
   return items.reduce((sum, item) => {
-    const unitPrice = unitPriceByProductId.get(item.productId) ?? 0;
+    const unitPrice = unitPriceByProductId.get(item.productId);
     return sum + item.quantity * unitPrice;
   }, 0);
 }
@@ -107,12 +107,13 @@ function computeOrderTotalAmount(items: OrderItem[], lockedRows: LockedInventory
  *
  * Called when Phase 2 payment fails. Runs in its own short transaction.
  */
-async function cancelPendingOrder(
+export async function cancelPendingOrder(
   orderId: string,
   warehouseId: string,
   items: OrderPayload['items'],
+  outerTx?: DbTransaction,
 ): Promise<void> {
-  await db.transaction(async (tx: DbTransaction) => {
+  await reuseTransactionIfAvailable(outerTx, async (tx) => {
     await tx.update(Orders).set({ status: 'FAILED' }).where(eq(Orders.id, orderId));
 
     await Promise.all(

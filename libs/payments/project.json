@@ -12,6 +12,7 @@
         "outputPath": "dist/libs/payments",
         "main": "libs/payments/src/index.ts",
         "tsConfig": "libs/payments/tsconfig.lib.json",
+        "rootDir": ".",
         "assets": []
       }
     },

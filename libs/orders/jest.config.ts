@@ -2,6 +2,7 @@ export default {
   displayName: 'orders',
   preset: '../../jest.preset.cjs',
   testEnvironment: 'node',
+  maxWorkers: 1,
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },

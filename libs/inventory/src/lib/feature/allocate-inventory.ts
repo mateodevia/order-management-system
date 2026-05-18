@@ -107,7 +107,7 @@ export type InventoryAllocationResult = {
  * @param {OrderItem[]} items - Array of order items, each specifying product and desired quantity.
  * @param {Location} shippingLocation - The shipping destination, used to compute proximity to warehouses.
  *
- * @returns {Promise<string>} - The ID of the selected and allocated warehouse.
+ * @returns {Promise<InventoryAllocationResult>} - The selected warehouse ID and its locked inventory rows.
  *
  * @throws {AppError} - If no warehouse can satisfy the entire order, or if inventory allocation times out.
  */

@@ -2,9 +2,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validateRequest } from '@oms/shared/util-validation';
 import { createOrder } from './create-order';
-import { PaymentClient } from '@oms/payments';
-import { GeocodingClient } from '@oms/shared/geocoding';
-import { createOrderService } from '../data-access/order-service';
 
 export const ordersRouter = Router();
 
@@ -26,10 +23,10 @@ ordersRouter.post(
                 quantity: z.number().int().min(1),
               }),
             )
+            .nonempty()
             .refine(uniqueByProductId, {
               message: 'items must not contain duplicate productId values',
-            })
-            .nonempty(),
+            }),
         })
         .strict(),
     },

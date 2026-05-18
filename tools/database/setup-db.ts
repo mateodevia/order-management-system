@@ -2,10 +2,10 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { sql } from 'drizzle-orm';
-import { warehouses } from '../../libs/inventory/src/lib/data-access/warehouses.schema';
-import { inventory } from '../../libs/inventory/src/lib/data-access/inventory.schema';
+import { Warehouses } from '../../libs/inventory/src/lib/data-access/warehouses.schema';
+import { Inventory } from '../../libs/inventory/src/lib/data-access/inventory.schema';
 import path from 'path';
-import { loadSchemaTableNames } from './load-schema-tables';
+import { loadSchemaTableNames } from '../../libs/shared/database/src/lib/load-schema-tables';
 
 async function main() {
   const connectionString = process.env['DATABASE_URL'];
@@ -21,27 +21,20 @@ async function main() {
 
   console.log('Running migrations...');
   await migrate(db, {
-    migrationsFolder: path.resolve(
-      __dirname,
-      '../../libs/shared/database/src/lib/migrations'
-    ),
+    migrationsFolder: path.resolve(__dirname, '../../libs/shared/database/src/lib/migrations'),
   });
 
   console.log('Truncating existing data...');
-  const tableNames = loadSchemaTableNames(
-    path.resolve(__dirname, '../../libs'),
-  );
+  const tableNames = loadSchemaTableNames();
   if (tableNames.length === 0) {
     throw new Error('No tables found in schema files');
   }
   // Safe: table names are statically extracted from our own .schema.ts files, not user input
-  await db.execute(
-    sql.raw(`TRUNCATE TABLE ${tableNames.join(', ')} CASCADE`),
-  );
+  await db.execute(sql.raw(`TRUNCATE TABLE ${tableNames.join(', ')} CASCADE`));
 
   console.log('Seeding warehouses...');
   const seededWarehouses = await db
-    .insert(warehouses)
+    .insert(Warehouses)
     .values([
       {
         name: 'Atlanta Distribution Center',
@@ -64,7 +57,7 @@ async function main() {
         location: { lat: 33.4484, lng: -112.074 },
       },
     ])
-    .returning({ id: warehouses.id, name: warehouses.name });
+    .returning({ id: Warehouses.id, name: Warehouses.name });
 
   console.log(`Seeded ${seededWarehouses.length} warehouses`);
 
@@ -82,10 +75,11 @@ async function main() {
       warehouseId: wh.id,
       productId,
       quantity: 50 + idx * 10,
-    }))
+      unitPrice: 1000 + idx * 500,
+    })),
   );
 
-  await db.insert(inventory).values(inventoryRows);
+  await db.insert(Inventory).values(inventoryRows);
   console.log(`Seeded ${inventoryRows.length} inventory records`);
 
   await pool.end();

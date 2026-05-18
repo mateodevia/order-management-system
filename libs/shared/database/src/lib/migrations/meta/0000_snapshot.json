@@ -25,6 +25,12 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "unit_price": {
+          "name": "unit_price",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -189,6 +195,19 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "retry_count": {
+          "name": "retry_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_retry_at": {
+          "name": "next_retry_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -212,7 +231,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "orders_status_check": {
+          "name": "orders_status_check",
+          "value": "\"status\" IN ('PENDING_PAYMENT', 'PAID', 'FAILED', 'CANCELLED', 'DLQ')"
+        }
+      },
       "isRLSEnabled": false
     }
   },

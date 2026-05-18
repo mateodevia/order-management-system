@@ -1,15 +1,11 @@
 import { sql, eq, and } from 'drizzle-orm';
-import { db, pool, truncateAllTables } from '@oms/shared/database';
+import { db, truncateAllTables } from '@oms/shared/database';
 import { PaymentClient } from '@oms/payments';
 import { GeocodingClient, GeocodingMockedAddress } from '@oms/shared/geocoding';
 import { AppError } from '@oms/shared/util-errors';
 import { Warehouses, Inventory } from '@oms/inventory';
 import { Orders } from '../orders.schema';
 import { createOrderService, type OrderPayload } from '../order-service';
-
-afterAll(async () => {
-  await pool.end();
-});
 
 beforeEach(async () => {
   await truncateAllTables();

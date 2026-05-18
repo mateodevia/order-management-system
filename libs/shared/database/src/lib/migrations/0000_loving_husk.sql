@@ -26,7 +26,10 @@ CREATE TABLE "orders" (
 	"warehouse_id" uuid,
 	"status" text NOT NULL,
 	"idempotency_key" varchar NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"retry_count" integer DEFAULT 0 NOT NULL,
+	"next_retry_at" timestamp,
+	CONSTRAINT "orders_status_check" CHECK ("status" IN ('PENDING_PAYMENT', 'PAID', 'FAILED', 'CANCELLED', 'DLQ'))
 );
 --> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

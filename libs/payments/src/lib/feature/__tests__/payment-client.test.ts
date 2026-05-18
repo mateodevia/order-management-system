@@ -1,5 +1,6 @@
 import { AppError } from '@oms/shared/util-errors';
-import { PaymentClient, PaymentStatus } from '../payment-client';
+import { PaymentStatus } from '@oms/shared/types';
+import { PaymentClient } from '../payment-client';
 import type { IPaymentClient } from '../payment-client';
 
 describe('PaymentClient', () => {
@@ -135,7 +136,7 @@ describe('PaymentClient', () => {
       const status: PaymentStatus = await client.getStatus('key-status-success');
 
       // ASSERT
-      expect(status).toBe<PaymentStatus>('SUCCESS');
+      expect(status).toBe(PaymentStatus.SUCCESS);
     });
 
     test('When getStatus is called for an in-flight key, then it returns PENDING', async () => {
@@ -147,7 +148,7 @@ describe('PaymentClient', () => {
       const status: PaymentStatus = await client.getStatus('key-status-pending');
 
       // ASSERT
-      expect(status).toBe<PaymentStatus>('PENDING');
+      expect(status).toBe(PaymentStatus.PENDING);
     });
 
     test('When getStatus is called for an unknown key, then it returns NOT_FOUND', async () => {
@@ -158,19 +159,19 @@ describe('PaymentClient', () => {
       const status: PaymentStatus = await client.getStatus('key-status-unknown');
 
       // ASSERT
-      expect(status).toBe<PaymentStatus>('NOT_FOUND');
+      expect(status).toBe(PaymentStatus.NOT_FOUND);
     });
 
     test('When forceStatus pins DECLINED for a key, then getStatus returns DECLINED regardless of receipt state', async () => {
       // ARRANGE
       const client = new PaymentClient();
-      client.testables.forceStatus('key-status-declined', 'DECLINED');
+      client.testables.forceStatus('key-status-declined', PaymentStatus.DECLINED);
 
       // ACT
       const status: PaymentStatus = await client.getStatus('key-status-declined');
 
       // ASSERT
-      expect(status).toBe<PaymentStatus>('DECLINED');
+      expect(status).toBe(PaymentStatus.DECLINED);
     });
 
     test('When forceFailure is active, then getStatus throws the same error as charge', async () => {

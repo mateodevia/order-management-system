@@ -1,3 +1,4 @@
+import { PaymentStatus } from '@oms/shared/types';
 import { AppError } from '@oms/shared/util-errors';
 
 /** Parameters for a payment charge request. */
@@ -32,17 +33,6 @@ export interface ChargeReceipt {
   /** HTTP status: 201 on first success, 200 when replaying a cached idempotent result. */
   httpStatusCode: 201 | 200;
 }
-
-/**
- * Outcome of a gateway status query, used by the reconciliation sweeper to resolve
- * stale {@link https://claude.md §7} PENDING_PAYMENT orders.
- *
- * - `SUCCESS`   — charge completed; order can be moved to PAID.
- * - `PENDING`   — charge is still in flight; sweeper should wait.
- * - `DECLINED`  — card was declined; restore inventory and mark FAILED.
- * - `NOT_FOUND` — gateway has no record; treat as never charged, restore inventory.
- */
-export type PaymentStatus = 'SUCCESS' | 'PENDING' | 'DECLINED' | 'NOT_FOUND';
 
 /**
  * Contract for payment gateway clients.
@@ -183,13 +173,13 @@ export class PaymentClient implements IPaymentClient {
     }
 
     if (this.receipts.has(idempotencyKey)) {
-      return 'SUCCESS';
+      return PaymentStatus.SUCCESS;
     }
 
     if (this.pendingKeys.has(idempotencyKey)) {
-      return 'PENDING';
+      return PaymentStatus.PENDING;
     }
 
-    return 'NOT_FOUND';
+    return PaymentStatus.NOT_FOUND;
   }
 }

@@ -12,6 +12,7 @@
         "outputPath": "dist/libs/shared/geocoding",
         "main": "libs/shared/geocoding/src/index.ts",
         "tsConfig": "libs/shared/geocoding/tsconfig.lib.json",
+        "rootDir": ".",
         "assets": []
       }
     },

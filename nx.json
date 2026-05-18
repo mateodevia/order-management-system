@@ -12,6 +12,7 @@
     ],
     "sharedGlobals": []
   },
+  "parallel": 1,
   "targetDefaults": {
     "build": {
       "cache": true,
