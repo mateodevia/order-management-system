@@ -37,6 +37,8 @@ npm start
 
 The API server will be available at `http://localhost:3000`.
 
+For manual functional testing with curl or Postman, see [tools/database/API-TESTING.md](tools/database/API-TESTING.md). After `db:setup`, the seeder prints stable product UUIDs and scenario hints to the console.
+
 ---
 
 ## Available Commands

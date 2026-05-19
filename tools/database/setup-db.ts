@@ -7,6 +7,14 @@ import { Warehouses } from '../../libs/inventory/src/lib/data-access/warehouses.
 import { Inventory } from '../../libs/inventory/src/lib/data-access/inventory.schema';
 import path from 'path';
 import { loadSchemaTableNames } from '../../libs/shared/database/src/lib/load-schema-tables';
+import {
+  SEED_WAREHOUSES,
+  SEED_PRODUCTS,
+  SEED_CUSTOMERS,
+  SEED_ADDRESSES,
+  SEED_TEST_SCENARIOS,
+  buildInventoryRows,
+} from './seed-data';
 
 /**
  * One-shot database bootstrap: PostGIS, migrations, truncate, and seed warehouses/inventory.
@@ -39,55 +47,44 @@ async function main() {
   customLogger.info('Seeding warehouses');
   const seededWarehouses = await db
     .insert(Warehouses)
-    .values([
-      {
-        name: 'Atlanta Distribution Center',
-        location: { lat: 33.749, lng: -84.388 },
-      },
-      {
-        name: 'Chicago Fulfillment Hub',
-        location: { lat: 41.8781, lng: -87.6298 },
-      },
-      {
-        name: 'Dallas Supply Depot',
-        location: { lat: 32.7767, lng: -96.797 },
-      },
-      {
-        name: 'Denver Logistics Center',
-        location: { lat: 39.7392, lng: -104.9903 },
-      },
-      {
-        name: 'Phoenix Warehouse',
-        location: { lat: 33.4484, lng: -112.074 },
-      },
-    ])
+    .values(SEED_WAREHOUSES.map(({ name, location }) => ({ name, location })))
     .returning({ id: Warehouses.id, name: Warehouses.name });
 
   customLogger.info('Seeded warehouses', { count: seededWarehouses.length });
 
-  const productIds = [
-    '11111111-1111-1111-1111-111111111111',
-    '22222222-2222-2222-2222-222222222222',
-    '33333333-3333-3333-3333-333333333333',
-    '44444444-4444-4444-4444-444444444444',
-    '55555555-5555-5555-5555-555555555555',
-  ];
-
-  customLogger.info('Seeding inventory');
-  const inventoryRows = seededWarehouses.flatMap((wh) =>
-    productIds.map((productId, idx) => ({
-      warehouseId: wh.id,
-      productId,
-      quantity: 50 + idx * 10,
-      unitPrice: 1000 + idx * 500,
-    })),
+  const warehouseIdByName = new Map(
+    seededWarehouses.map((w) => [w.name, w.id] as const),
   );
 
+  const inventoryRows = buildInventoryRows(warehouseIdByName);
   await db.insert(Inventory).values(inventoryRows);
   customLogger.info('Seeded inventory records', { count: inventoryRows.length });
 
+  logSeedManifest();
+
   await pool.end();
   customLogger.info('Database setup complete');
+}
+
+/** Prints stable IDs and manual-test hints to stdout after seeding. */
+function logSeedManifest(): void {
+  customLogger.info('─── Seed manifest (use in Postman / curl) ───');
+  customLogger.info('See tools/database/API-TESTING.md for copy-paste curl examples');
+
+  customLogger.info('Customers', SEED_CUSTOMERS);
+  customLogger.info('Products', {
+    widgetA: SEED_PRODUCTS.widgetA.id,
+    widgetB: SEED_PRODUCTS.widgetB.id,
+    gadgetC: SEED_PRODUCTS.gadgetC.id,
+    splitEast: SEED_PRODUCTS.splitEast.id,
+    splitWest: SEED_PRODUCTS.splitWest.id,
+    scarce: SEED_PRODUCTS.scarce.id,
+  });
+  customLogger.info('Shipping addresses (exact strings)', SEED_ADDRESSES);
+
+  for (const scenario of SEED_TEST_SCENARIOS) {
+    customLogger.info(`Scenario: ${scenario.name}`, { expected: scenario.expected });
+  }
 }
 
 main().catch((err) => {
