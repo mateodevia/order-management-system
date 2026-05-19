@@ -16,6 +16,7 @@ ordersRouter.post(
       body: z
         .object({
           customerId: z.uuid(),
+          creditCardNumber: z.string().min(13).max(19),
           shippingAddress: z.string().min(1).max(255),
           items: z
             .array(

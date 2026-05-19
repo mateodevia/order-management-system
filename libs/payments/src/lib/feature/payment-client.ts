@@ -191,3 +191,6 @@ export class PaymentClient implements IPaymentClient {
     return PaymentStatus.NOT_FOUND;
   }
 }
+
+/** Process-level singleton so all consumers (order creation, reconciliation) share the same in-memory state. */
+export const sharedPaymentClient = new PaymentClient();

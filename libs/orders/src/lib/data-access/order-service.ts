@@ -12,6 +12,8 @@ import type { LockedInventoryRow, OrderItem } from '@oms/shared/types';
 export interface OrderPayload {
   /** Customer placing the order. */
   customerId: string;
+  /** Raw credit card number for the payment charge. */
+  creditCardNumber: string;
   /** Free-text shipping address geocoded during Phase 1. */
   shippingAddress: string;
   /** Line items to fulfill from a single warehouse. */
@@ -129,7 +131,9 @@ function computeOrderTotalAmount(items: OrderItem[], lockedRows: LockedInventory
 /**
  * Phase 3 (compensation): Restores inventory and marks the order as FAILED.
  *
- * Called when Phase 2 payment fails or reconciliation determines the charge did not succeed.
+ * Uses `SELECT FOR UPDATE SKIP LOCKED` to prevent the double-restoration race
+ * between the main flow's compensation and the reconciliation worker. If the
+ * row is already locked by another process, this call becomes a safe no-op.
  *
  * @param orderId - Order to mark terminal.
  * @param warehouseId - Warehouse whose inventory rows are restored.
@@ -143,6 +147,14 @@ export async function cancelPendingOrder(
   outerTx?: DbTransaction,
 ): Promise<void> {
   await reuseTransactionIfAvailable(outerTx, async (tx) => {
+    const locked = await tx.execute<{ id: string }>(
+      sql`SELECT id FROM orders WHERE id = ${orderId} AND status = 'PENDING_PAYMENT' FOR UPDATE SKIP LOCKED`,
+    );
+
+    if (locked.rows.length === 0) {
+      return;
+    }
+
     await tx.update(Orders).set({ status: 'FAILED' }).where(eq(Orders.id, orderId));
 
     await Promise.all(
@@ -185,7 +197,7 @@ async function createOrderFlow(
     const chargeAmount = computeOrderTotalAmount(payload.items, lockedRows);
 
     await deps.paymentClient.charge({
-      creditCardNumber: '4111111111111111',
+      creditCardNumber: payload.creditCardNumber,
       amount: chargeAmount,
       description: `Order ${orderId}`,
       idempotencyKey,

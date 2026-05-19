@@ -1,16 +1,19 @@
-import { PaymentClient, withCircuitBreaker as paymentCircuitBreaker } from '@oms/payments';
+import { sharedPaymentClient, withCircuitBreaker as paymentCircuitBreaker } from '@oms/payments';
 import {
-  GeocodingClient,
+  sharedGeocodingClient,
   withCircuitBreaker as geocodingCircuitBreaker,
 } from '@oms/shared/geocoding';
 import { geocodingBreaker, paymentBreaker } from '@oms/shared/util-circuit-breaker';
 import { createOrderService } from '../data-access/order-service';
 import type { OrderPayload } from '../data-access/order-service';
 
+const paymentClient = paymentCircuitBreaker(sharedPaymentClient, paymentBreaker);
+const geocodingClient = geocodingCircuitBreaker(sharedGeocodingClient, geocodingBreaker);
+
 /**
  * HTTP entry point for order creation.
  *
- * Wires default payment and geocoding clients (with circuit breakers) into
+ * Wires singleton payment and geocoding clients (with circuit breakers) into
  * {@link createOrderService}.
  *
  * @param payload - Validated order request body.
@@ -19,8 +22,8 @@ import type { OrderPayload } from '../data-access/order-service';
  */
 export const createOrder = (payload: OrderPayload, idempotencyKey: string) => {
   return createOrderService(payload, idempotencyKey, {
-    paymentClient: paymentCircuitBreaker(new PaymentClient(), paymentBreaker),
-    geocodingClient: geocodingCircuitBreaker(new GeocodingClient(), geocodingBreaker),
+    paymentClient,
+    geocodingClient,
   });
 };
 

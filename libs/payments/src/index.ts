@@ -1,3 +1,3 @@
-export { PaymentClient } from './lib/feature/payment-client';
+export { PaymentClient, sharedPaymentClient } from './lib/feature/payment-client';
 export { withCircuitBreaker } from './lib/feature/with-circuit-breaker';
 export type { IPaymentClient, ChargeParams, ChargeReceipt } from './lib/feature/payment-client';

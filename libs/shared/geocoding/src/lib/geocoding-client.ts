@@ -95,3 +95,6 @@ export class GeocodingClient implements IGeocodingClient {
     return coordinates;
   }
 }
+
+/** Process-level singleton shared across all consumers. */
+export const sharedGeocodingClient = new GeocodingClient();

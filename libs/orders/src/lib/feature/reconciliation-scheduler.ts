@@ -1,4 +1,4 @@
-import { PaymentClient, withCircuitBreaker } from '@oms/payments';
+import { sharedPaymentClient, withCircuitBreaker } from '@oms/payments';
 import { customLogger } from '@oms/shared/monitoring';
 import { paymentBreaker } from '@oms/shared/util-circuit-breaker';
 import { runReconciliationCycle, type ReconciliationWorkerConfig } from './reconciliation-worker';
@@ -21,7 +21,7 @@ export function startReconciliationScheduler(intervalMs = DEFAULT_INTERVAL_MS): 
   stop: () => void;
 } {
   const config: ReconciliationWorkerConfig = {
-    paymentClient: withCircuitBreaker(new PaymentClient(), paymentBreaker),
+    paymentClient: withCircuitBreaker(sharedPaymentClient, paymentBreaker),
     ...DEFAULT_CONFIG,
   };
 

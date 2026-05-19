@@ -36,6 +36,7 @@ describe('createOrderService', () => {
     const result = await createOrderService(
       {
         customerId: '00000000-0000-0000-0000-000000000099',
+        creditCardNumber: '4111111111111111',
         shippingAddress: GeocodingMockedAddress.Atlanta,
         items: [
           { productId: product1, quantity: 10 },
@@ -65,6 +66,7 @@ describe('createOrderService', () => {
     const promise = createOrderService(
       {
         customerId: '00000000-0000-0000-0000-000000000099',
+        creditCardNumber: '4111111111111111',
         shippingAddress: 'Unknown Address, Nowhere, XX',
         items: [{ productId: '00000000-0000-0000-0000-100000000001', quantity: 5 }],
       },
@@ -85,6 +87,7 @@ describe('createOrderService', () => {
     const promise = createOrderService(
       {
         customerId: '00000000-0000-0000-0000-000000000099',
+        creditCardNumber: '4111111111111111',
         shippingAddress: GeocodingMockedAddress.Atlanta,
         items: [
           { productId: '00000000-0000-0000-0000-100000000001', quantity: 10 },
@@ -108,6 +111,7 @@ describe('createOrderService', () => {
     const promise = createOrderService(
       {
         customerId: '00000000-0000-0000-0000-000000000099',
+        creditCardNumber: '4111111111111111',
         shippingAddress: GeocodingMockedAddress.Atlanta,
         items: [{ productId: '00000000-0000-0000-0000-100000000001', quantity: 5 }],
       },
@@ -151,6 +155,7 @@ describe('createOrderService', () => {
     const promise = createOrderService(
       {
         customerId: '00000000-0000-0000-0000-000000000099',
+        creditCardNumber: '4111111111111111',
         shippingAddress: GeocodingMockedAddress.Atlanta,
         items: [{ productId, quantity: 5 }],
       },
@@ -199,6 +204,7 @@ describe('createOrderService', () => {
 
     const payload: OrderPayload = {
       customerId: '00000000-0000-0000-0000-000000000099',
+      creditCardNumber: '4111111111111111',
       shippingAddress: GeocodingMockedAddress.Atlanta,
       items: [{ productId, quantity: 3 }],
     };
@@ -291,6 +297,7 @@ describe('createOrderService', () => {
       const promise = createOrderService(
         {
           customerId: '00000000-0000-0000-0000-000000000099',
+          creditCardNumber: '4111111111111111',
           shippingAddress: GeocodingMockedAddress.Atlanta,
           items: [{ productId, quantity: 5 }],
         },
@@ -340,6 +347,7 @@ describe('createOrderService', () => {
       const result = await createOrderService(
         {
           customerId: '00000000-0000-0000-0000-000000000099',
+          creditCardNumber: '4111111111111111',
           shippingAddress: GeocodingMockedAddress.Atlanta,
           items: [{ productId, quantity: 5 }],
         },
@@ -397,6 +405,7 @@ describe('createOrderService', () => {
       const result = await createOrderService(
         {
           customerId: '00000000-0000-0000-0000-000000000099',
+          creditCardNumber: '4111111111111111',
           shippingAddress: GeocodingMockedAddress.Atlanta,
           items: [{ productId, quantity: 5 }],
         },
